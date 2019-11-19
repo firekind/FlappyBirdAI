@@ -1,7 +1,10 @@
 from typing import List
 import pygame
-from entities import Player, Dummy
-from core import Entity, Direction, Axis
+import paths
+from core import Entity, Direction
+from core import TransformComponent
+from core import RenderComponent
+from core import CollisionComponent
 
 
 class EntityManager:
@@ -10,7 +13,7 @@ class EntityManager:
     """
 
     entities: List[Entity] = []
-    player: Player
+    player: Entity
 
     @staticmethod
     def update_entities(delta: float):
@@ -22,7 +25,8 @@ class EntityManager:
         """
 
         for entity in EntityManager.entities:
-            entity.update(delta)
+            for component in entity.components:
+                component.update(delta)
 
     @staticmethod
     def render_entities(screen: pygame.Surface):
@@ -35,7 +39,8 @@ class EntityManager:
 
         screen.fill((0, 0, 0))
         for entity in EntityManager.entities:
-            entity.render(screen)
+            for component in entity.components:
+                component.render(screen)
 
     @staticmethod
     def createPlayer():
@@ -43,12 +48,26 @@ class EntityManager:
         Creates the player.
         """
 
-        EntityManager.player = Player()
-        EntityManager.add_entity(EntityManager.player)
+        player = Entity()
+        tc = TransformComponent(pos=pygame.Vector2(370, 480))
+        player.add_component(tc)
+        player.add_component(RenderComponent(tc, img_path=paths.player_img))
+        player.add_component(CollisionComponent(lambda x: print("Player collide")))
+        player.is_collidable = True
+
+        EntityManager.player = player
+        EntityManager.add_entity(player)
 
     @staticmethod
     def createDummy():
-        EntityManager.add_entity(Dummy())
+        dummy = Entity()
+        tc = TransformComponent(pos=pygame.Vector2(400, 400))
+        dummy.add_component(tc)
+        # dummy.add_component(RenderComponent(tc, color=(255, 0, 0), size=(64, 64)))
+        dummy.add_component(RenderComponent(tc, img_path=paths.player_img))
+        dummy.is_collidable = True
+
+        EntityManager.add_entity(dummy)
 
     @staticmethod
     def add_entity(entity: 'Entity') -> None:
@@ -78,7 +97,7 @@ class KeyboardManager:
     Manages keyboard events.
     """
 
-    def __init__(self, player: Player):
+    def __init__(self, player: Entity):
         self.player = player
 
     def down(self, event: 'Event') -> None:
@@ -90,13 +109,13 @@ class KeyboardManager:
         """
 
         if event.key == pygame.K_d:
-            self.player.move(Direction.left)
+            self.player.transform_component.move(Direction.left)
         if event.key == pygame.K_a:
-            self.player.move(Direction.right)
+            self.player.transform_component.move(Direction.right)
         if event.key == pygame.K_w:
-            self.player.move(Direction.up)
+            self.player.transform_component.move(Direction.up)
         if event.key == pygame.K_s:
-            self.player.move(Direction.down)
+            self.player.transform_component.move(Direction.down)
 
     def up(self, event: 'Event') -> None:
         """
@@ -107,7 +126,7 @@ class KeyboardManager:
         """
 
         if event.key == pygame.K_d or event.key == pygame.K_a:
-            self.player.stop(Axis.horizontal)
+            self.player.transform_component.stop(Direction.horizontal)
         if event.key == pygame.K_w or event.key == pygame.K_s:
-            self.player.stop(Axis.vertical)
+            self.player.transform_component.stop(Direction.vertical)
    
