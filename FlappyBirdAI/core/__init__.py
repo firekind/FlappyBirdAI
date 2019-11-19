@@ -41,3 +41,6 @@ class Direction(Enum):
     down = 2
     left = 3
     right = 4
+    horizontal = 5
+    vertical = 6
+    all = 7
