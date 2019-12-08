@@ -73,7 +73,7 @@ class ComponentID(Enum):
     Transform = 1
     Render = 2
     Collision = 3
-    Physics = 4
+    Gravity = 4
     WindowExitTrigger = 5
 
 class TransformComponent(Component):
@@ -93,9 +93,9 @@ class TransformComponent(Component):
         pass
 
 
-class PhysicsComponent(Component):
+class GravityComponent(Component):
     def __init__(self, parent: Entity, mass: float):
-        Component.__init__(self, ComponentID.Physics, parent)
+        Component.__init__(self, ComponentID.Gravity, parent)
         self.transform = parent.transform_component
         self.velocity = Vector2(0, 0)
         self.gravity = 15
