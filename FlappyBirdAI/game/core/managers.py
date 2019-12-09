@@ -1,7 +1,7 @@
 from typing import List
 import pygame
 from pygame import Vector2
-import core
+import game.core as core
 
 
 class EntityManager:
@@ -38,7 +38,6 @@ class EntityManager:
             for component in entity.components.values():
                 component.render(screen)
 
-    
     @staticmethod
     def add_entity(entity: core.Entity) -> None:
         """
@@ -69,7 +68,8 @@ class KeyboardManager:
 
     def __init__(self, player: core.Entity):
         self.player = player
-        self.val = 50
+        self.jump_val = 7
+        self.speed = 0
 
     def down(self, event: 'Event') -> None:
         """
@@ -80,7 +80,16 @@ class KeyboardManager:
         """
 
         if event.key == pygame.K_SPACE:
-            self.jump(Vector2(0, -self.val))
+            self.jump()
+        if event.key == pygame.K_w:
+            self.player.get_component(core.ComponentID.Translation).velocity = Vector2(0, -self.speed)
+        if event.key == pygame.K_s:
+            self.player.get_component(core.ComponentID.Translation).velocity = Vector2(0, self.speed)
+        if event.key == pygame.K_a:
+            self.player.get_component(core.ComponentID.Translation).velocity = Vector2(-self.speed, 0)
+        if event.key == pygame.K_d:
+            self.player.get_component(core.ComponentID.Translation).velocity = Vector2(self.speed, 0)
+    
 
     def up(self, event: 'Event') -> None:
         """
@@ -90,9 +99,12 @@ class KeyboardManager:
             event (Event): The keyboard event.
         """
 
-        
+        if event.key == pygame.K_w or event.key == pygame.K_s:
+            self.player.get_component(core.ComponentID.Translation).velocity.y = 0
+        if event.key == pygame.K_a or event.key == pygame.K_d:
+            self.player.get_component(core.ComponentID.Translation).velocity.x = 0    
 
-    def jump(self, value: Vector2) -> None:
-        gravity: core.GravityComponent = self.player.get_component(core.ComponentID.Gravity)
-        gravity.velocity = value
+    def jump(self) -> None:
+        physics: core.TranslationComponent = self.player.get_component(core.ComponentID.Translation)
+        physics.velocity = Vector2(0, -self.jump_val)
    

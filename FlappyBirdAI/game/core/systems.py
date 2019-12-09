@@ -1,6 +1,6 @@
 import pygame
-from core.managers import EntityManager
-from core import Entity
+from game.core.managers import EntityManager
+from game.core import Entity
 
 class CollisionSystem:
     """
@@ -30,7 +30,7 @@ class CollisionSystem:
                     continue
 
                 # if there is a collision   
-                if pygame.sprite.collide_mask(entity.render_component, other_entity.render_component):
+                if pygame.sprite.collide_mask(entity.collision_component, other_entity.collision_component):
                     # handle the collision, add result to array
                     to_remove.append(entity.collision_component.on_collide(other_entity))
 

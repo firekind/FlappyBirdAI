@@ -8,8 +8,9 @@ class Entity:
     """
     Represents an entity in the game.
     """
-    def __init__(self):
+    def __init__(self, tag=None):
         self.components: Dict['ComponentID', 'Component'] = {}
+        self.tag = tag
 
     def add_component(self, component: 'Component') -> None:
         self.components.update({component.id: component})
@@ -24,37 +25,20 @@ class Entity:
         return self.components.get(component_id)
         
     @property
-    def transform_component(self):
+    def transform_component(self) -> 'TransformComponent':
         return self.components.get(ComponentID.Transform)
 
     @property
-    def render_component(self):
+    def render_component(self) -> 'RenderComponent':
         return self.components.get(ComponentID.Render)
 
     @property
-    def collision_component(self):
+    def collision_component(self) -> 'CollisionComponent':
         return self.components.get(ComponentID.Collision)
 
     @property
     def is_collidable(self):
         return bool(self.collision_component)
-
-class EntityGroup:
-    def __init__(self):
-        self.entities = {}
-
-    def add_entity(self, tag: str, entity: Entity) -> None:
-        self.entities[tag] = entity
-
-    def remove_entity(self, tag: str) -> None:
-        try:
-            del self.entities[tag]
-        except KeyError:
-            pass
-
-    def get_entity(self, tag: str) -> Union[Entity, None]:
-        return self.entities.get(tag)
-
 
 class Component(ABC):
     def __init__(self, ID: 'ComponentID', parent: Entity):
@@ -73,8 +57,8 @@ class ComponentID(Enum):
     Transform = 1
     Render = 2
     Collision = 3
-    Gravity = 4
-    WindowExitTrigger = 5
+    Translation = 4
+    AreaExitTrigger = 5
 
 class TransformComponent(Component):
     def __init__(self, parent: Entity, pos: Vector2 = Vector2(0, 0), 
@@ -93,22 +77,23 @@ class TransformComponent(Component):
         pass
 
 
-class GravityComponent(Component):
-    def __init__(self, parent: Entity, mass: float):
-        Component.__init__(self, ComponentID.Gravity, parent)
+class TranslationComponent(Component):
+    def __init__(self, parent: Entity, accel: Vector2 = Vector2(0, 0), vel: Vector2 = Vector2(0, 0)):
+        Component.__init__(self, ComponentID.Translation, parent)
         self.transform = parent.transform_component
-        self.velocity = Vector2(0, 0)
-        self.gravity = 15
+        self.velocity = vel
+        self.acceleration = accel
 
     def update(self, delta: float) -> None:
-        self.transform.pos += self.velocity * delta
-        self.velocity.y += self.gravity * delta
+        self.velocity.x += self.acceleration.x * delta
+        self.velocity.y += self.acceleration.y * delta
+        self.transform.pos += self.velocity
 
     def render(self, screen: pygame.Surface) -> None:
         pass
 
 
-class RenderComponent(Component, pygame.sprite.Sprite):
+class RenderComponent(Component):
     def __init__(self, parent: Entity, img_path: str = None, 
                  color: Tuple[int, int, int] = None,
                  size: Tuple[float, float] = None):
@@ -120,16 +105,30 @@ class RenderComponent(Component, pygame.sprite.Sprite):
             self.image: pygame.Surface = pygame.image.load(img_path).convert_alpha()
         else:
             self.image: pygame.Surface = pygame.Surface(size).convert_alpha()
-            self.image.fill(color)
-        
-        self.mask: pygame.Mask = pygame.mask.from_surface(self.image)
-        
+            self.image.fill(color)        
 
     def update(self, delta: float) -> None:
         pass
 
     def render(self, screen: pygame.Surface) -> None:
         screen.blit(self.image, self.transform.pos)
+    
+
+class CollisionComponent(Component, pygame.sprite.Sprite):
+    def __init__(self, parent: Entity, callback: Callable[[Entity], Entity] = None):
+        Component.__init__(self, ComponentID.Collision, parent)
+        pygame.sprite.Sprite.__init__(self)
+
+        self.transform: TransformComponent = parent.transform_component
+        self.image: pygame.Surface = parent.render_component.image
+        self.mask: pygame.Mask = pygame.mask.from_surface(self.image)
+
+        self.callback = callback
+        
+    def on_collide(self, entity: Entity) -> Entity:
+        if self.callback is not None:
+            return self.callback(self.parent, entity)
+        return None
 
     @property
     def rect(self) -> pygame.Rect:
@@ -141,19 +140,9 @@ class RenderComponent(Component, pygame.sprite.Sprite):
         """
 
         rect: pygame.Rect = self.image.get_rect()
-        rect.center = (self.transform.pos.x, self.transform.pos.y)
+        rect.x = self.transform.pos.x
+        rect.y = self.transform.pos.y
         return rect
-    
-
-class CollisionComponent(Component):
-    def __init__(self, parent: Entity, callback: Callable[[Entity], Entity] = None):
-        Component.__init__(self, ComponentID.Collision, parent)
-        self.callback = callback
-        
-    def on_collide(self, entity: Entity) -> Entity:
-        if self.callback is not None:
-            return self.callback(entity)
-        return None
 
     def update(self, delta: float) -> None:
         pass
@@ -163,31 +152,51 @@ class CollisionComponent(Component):
   
 
 
-class WindowExitTriggerComponent(Component):
+class AreaExitTriggerComponent(Component):
     def __init__(self, parent: Entity, callback: Callable[[Entity, 'Direction', Vector2], None], 
-                 window_width: int, window_height: int):
-        Component.__init__(self, ComponentID.WindowExitTrigger, parent)
+                 area: pygame.Rect, contain: bool = False, offset: Vector2 = Vector2(0, 0)):
+        Component.__init__(self, ComponentID.AreaExitTrigger, parent)
         self.parent = parent
         self.transform = parent.transform_component
         self.callback = callback
-        self.width = window_width - parent.render_component.rect.width
-        self.height = window_height - parent.render_component.rect.height
+        self.area: pygame.Rect = area
+        self.contain = contain
+        render_component = self.parent.render_component
+
+        # getting the image dimensions, if they exist
+        if render_component is not None:
+            self.image_dim: Vector2 = Vector2(render_component.image.get_rect().width,
+                                              render_component.image.get_rect().height)
+        else:
+            self.image_dim: Vector2 = Vector2(0, 0)
+
+        if contain:
+            self.offset = Vector2(self.image_dim.x / 2 + offset.x, self.image_dim.y / 2 + offset.y)
+        else:
+            self.offset = Vector2(-self.image_dim.x / 2 - offset.x, -self.image_dim.y / 2 - offset.y)
+            
 
     def update(self, delta: float) -> None:
         if self.callback is None:
             return 
 
-        if self.transform.pos.x < 0:
-            self.callback(self.parent, Direction.left, Vector2(-self.transform.pos.x, 0))
-        elif self.transform.pos.x > self.width:
-            self.callback(self.parent, Direction.right, Vector2(self.width - self.transform.pos.x, 0))
+        center_x = self.transform.pos.x + (self.image_dim.x / 2)
+        center_y = self.transform.pos.y + (self.image_dim.y / 2)
 
-        if self.transform.pos.y < 0:
-            self.callback(self.parent, Direction.up, Vector2(0, -self.transform.pos.y))
-        elif self.transform.pos.y > self.height:
-            self.callback(self.parent, Direction.down, Vector2(0, self.height - self.transform.pos.y))
-            
+        if center_x - self.offset.x < self.area.x:
+            self.callback(self.parent, Direction.left, Vector2(self.area.x - (center_x - self.offset.x), 0))
 
+        elif center_x + self.offset.x > self.area.x + self.area.width:
+            self.callback(self.parent, Direction.right,
+                          Vector2((self.area.x + self.area.width) - (center_x + self.offset.x), 0))
+
+        elif center_y - self.offset.y < self.area.y:
+            self.callback(self.parent, Direction.up, Vector2(0, self.area.y - (center_y - self.offset.y)))
+
+        elif center_y + self.offset.y > self.area.y + self.area.height:
+            self.callback(self.parent, Direction.down,
+                          Vector2(0, (self.area.y + self.area.height) - (center_y + self.offset.y)))
+    
 
     def render(self, screen: pygame.Surface) -> None:
         pass
