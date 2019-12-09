@@ -1,10 +1,7 @@
 from typing import List
 import pygame
-import paths
-from core import Entity, Direction
-from core import TransformComponent
-from core import RenderComponent
-from core import CollisionComponent
+from pygame import Vector2
+import core
 
 
 class EntityManager:
@@ -12,8 +9,7 @@ class EntityManager:
     Manages all the entities in the game.
     """
 
-    entities: List[Entity] = []
-    player: Entity
+    entities: List[core.Entity] = []
 
     @staticmethod
     def update_entities(delta: float):
@@ -25,7 +21,7 @@ class EntityManager:
         """
 
         for entity in EntityManager.entities:
-            for component in entity.components:
+            for component in entity.components.values():
                 component.update(delta)
 
     @staticmethod
@@ -39,54 +35,27 @@ class EntityManager:
 
         screen.fill((0, 0, 0))
         for entity in EntityManager.entities:
-            for component in entity.components:
+            for component in entity.components.values():
                 component.render(screen)
 
     @staticmethod
-    def createPlayer():
-        """
-        Creates the player.
-        """
-
-        player = Entity()
-        tc = TransformComponent(pos=pygame.Vector2(370, 480))
-        player.add_component(tc)
-        player.add_component(RenderComponent(tc, img_path=paths.player_img))
-        player.add_component(CollisionComponent(lambda x: print("Player collide")))
-        player.is_collidable = True
-
-        EntityManager.player = player
-        EntityManager.add_entity(player)
-
-    @staticmethod
-    def createDummy():
-        dummy = Entity()
-        tc = TransformComponent(pos=pygame.Vector2(400, 400))
-        dummy.add_component(tc)
-        # dummy.add_component(RenderComponent(tc, color=(255, 0, 0), size=(64, 64)))
-        dummy.add_component(RenderComponent(tc, img_path=paths.player_img))
-        dummy.is_collidable = True
-
-        EntityManager.add_entity(dummy)
-
-    @staticmethod
-    def add_entity(entity: 'Entity') -> None:
+    def add_entity(entity: core.Entity) -> None:
         """
         Adds an entity to the game.
         
         Args:
-            entity (Entity): The entity to add.
+            entity (core.Entity): The entity to add.
         """
 
         EntityManager.entities.append(entity)
 
     @staticmethod
-    def remove_entity(entity: 'Entity') -> None:
+    def remove_entity(entity: core.Entity) -> None:
         """
         removes an entity from the game.
         
         Args:
-            entity (Entity): The entity to remove
+            entity (core.Entity): The entity to remove
         """
 
         EntityManager.entities.remove(entity)
@@ -97,8 +66,10 @@ class KeyboardManager:
     Manages keyboard events.
     """
 
-    def __init__(self, player: Entity):
+    def __init__(self, player: core.Entity):
         self.player = player
+        self.jump_val = 7
+        self.speed = 0
 
     def down(self, event: 'Event') -> None:
         """
@@ -108,14 +79,17 @@ class KeyboardManager:
             event (Event): The keyboard event.
         """
 
-        if event.key == pygame.K_d:
-            self.player.transform_component.move(Direction.left)
-        if event.key == pygame.K_a:
-            self.player.transform_component.move(Direction.right)
+        if event.key == pygame.K_SPACE:
+            self.jump()
         if event.key == pygame.K_w:
-            self.player.transform_component.move(Direction.up)
+            self.player.get_component(core.ComponentID.Translation).velocity = Vector2(0, -self.speed)
         if event.key == pygame.K_s:
-            self.player.transform_component.move(Direction.down)
+            self.player.get_component(core.ComponentID.Translation).velocity = Vector2(0, self.speed)
+        if event.key == pygame.K_a:
+            self.player.get_component(core.ComponentID.Translation).velocity = Vector2(-self.speed, 0)
+        if event.key == pygame.K_d:
+            self.player.get_component(core.ComponentID.Translation).velocity = Vector2(self.speed, 0)
+    
 
     def up(self, event: 'Event') -> None:
         """
@@ -125,8 +99,12 @@ class KeyboardManager:
             event (Event): The keyboard event.
         """
 
-        if event.key == pygame.K_d or event.key == pygame.K_a:
-            self.player.transform_component.stop(Direction.horizontal)
         if event.key == pygame.K_w or event.key == pygame.K_s:
-            self.player.transform_component.stop(Direction.vertical)
+            self.player.get_component(core.ComponentID.Translation).velocity.y = 0
+        if event.key == pygame.K_a or event.key == pygame.K_d:
+            self.player.get_component(core.ComponentID.Translation).velocity.x = 0    
+
+    def jump(self) -> None:
+        physics: core.TranslationComponent = self.player.get_component(core.ComponentID.Translation)
+        physics.velocity = Vector2(0, -self.jump_val)
    

@@ -26,9 +26,11 @@ class CollisionSystem:
             # for every other entity
             for j in range(i+1, num):
                 other_entity: Entity = EntityManager.entities[j]
-            
+                if not other_entity.is_collidable:
+                    continue
+
                 # if there is a collision   
-                if pygame.sprite.collide_mask(entity.render_component, other_entity.render_component):
+                if pygame.sprite.collide_mask(entity.collision_component, other_entity.collision_component):
                     # handle the collision, add result to array
                     to_remove.append(entity.collision_component.on_collide(other_entity))
 
