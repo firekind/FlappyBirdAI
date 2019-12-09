@@ -34,7 +34,7 @@ class Game:
         """
 
         while self.running:
-            # keeps frame rate contant and gets time passed since
+            # keeps frame rate constant and gets time passed since
             # previous call
             delta = self.clock.tick(FPS)
             delta /= 1e3
@@ -70,11 +70,14 @@ class EntityCreator:
         def on_window_exit(entity: core.Entity, direction: core.Direction, dpos: Vector2) -> None:
             EntityManager.remove_entity(entity)
 
+        def on_collide(entity: core.Entity, other: core.Entity) -> core.Entity:
+            return entity
+
         player = core.Entity()
         player.add_component(core.TransformComponent(player, pos=pygame.Vector2(200, 280)))
         player.add_component(core.TranslationComponent(player, accel=Vector2(0, GRAVITY)))
         player.add_component(core.RenderComponent(player, color=(255, 0, 0), size=(64, 64)))
-        player.add_component(core.CollisionComponent(player, None))
+        player.add_component(core.CollisionComponent(player, on_collide))
         player.add_component(core.AreaExitTriggerComponent(player, on_window_exit, pygame.Rect(0, 0, WIDTH, HEIGHT),
                                                            contain=False))
 

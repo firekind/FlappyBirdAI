@@ -127,7 +127,7 @@ class CollisionComponent(Component, pygame.sprite.Sprite):
         
     def on_collide(self, entity: Entity) -> Entity:
         if self.callback is not None:
-            return self.callback(entity)
+            return self.callback(self.parent, entity)
         return None
 
     @property
