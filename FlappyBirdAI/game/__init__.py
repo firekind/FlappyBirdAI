@@ -36,6 +36,7 @@ class GameState:
         # keeps frame rate constant and gets time passed since
         # previous call
         delta = self.clock.tick(FPS)
+        # converting delta to millisecond
         delta /= 1e3
 
         # managing events
