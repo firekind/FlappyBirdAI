@@ -1,6 +1,6 @@
 import pygame
-from core.managers import EntityManager
-from core import Entity
+from game.core.managers import EntityManager
+from game.core import Entity
 
 class CollisionSystem:
     """

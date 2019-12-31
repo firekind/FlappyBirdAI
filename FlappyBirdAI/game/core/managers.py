@@ -1,7 +1,7 @@
 from typing import List
 import pygame
 from pygame import Vector2
-import core
+import game.core as core
 
 
 class EntityManager:
