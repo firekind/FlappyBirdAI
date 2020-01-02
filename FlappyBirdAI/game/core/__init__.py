@@ -11,6 +11,7 @@ class Entity:
     def __init__(self, tag=None):
         self.components: Dict['ComponentID', 'Component'] = {}
         self.tag = tag
+        self.remove = False
 
     def add_component(self, component: 'Component') -> None:
         self.components.update({component.id: component})
@@ -23,6 +24,22 @@ class Entity:
 
     def get_component(self, component_id: 'ComponentID') -> 'Component':
         return self.components.get(component_id)
+
+    @property
+    def x(self) -> float:
+        return self.transform_component.pos.x
+
+    @property
+    def y(self) -> float:
+        return self.transform_component.pos.y
+
+    @property
+    def width(self) -> float:
+        return self.render_component.image.get_rect().width
+
+    @property
+    def height(self) -> float:
+        return self.render_component.image.get_rect().height
         
     @property
     def transform_component(self) -> 'TransformComponent':
@@ -59,6 +76,8 @@ class ComponentID(Enum):
     Collision = 3
     Translation = 4
     AreaExitTrigger = 5
+    AttachCallbacks = 6
+
 
 class TransformComponent(Component):
     def __init__(self, parent: Entity, pos: Vector2 = Vector2(0, 0), 
@@ -197,6 +216,20 @@ class AreaExitTriggerComponent(Component):
             self.callback(self.parent, Direction.down,
                           Vector2(0, (self.area.y + self.area.height) - (center_y + self.offset.y)))
     
+
+    def render(self, screen: pygame.Surface) -> None:
+        pass
+
+
+class AttachCallbacksComponent(Component):
+    def __init__(self, parent: Entity, callbacks: Dict[str, Callable]):
+        super(AttachCallbacksComponent, self).__init__(ComponentID.AttachCallbacks, parent)
+
+        for name, callback in callbacks.items():
+            setattr(parent, name, callback)
+
+    def update(self, delta: float) -> None:
+        pass
 
     def render(self, screen: pygame.Surface) -> None:
         pass
