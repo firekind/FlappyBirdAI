@@ -1,6 +1,10 @@
 import pygame
+
+import numpy as np
+
 from game.core.managers import EntityManager
 from game.core import Entity
+
 
 class CollisionSystem:
     """
@@ -15,7 +19,6 @@ class CollisionSystem:
 
         # getting number of entities in the game.
         num = len(EntityManager.entities)
-        to_remove = []
 
         # for every entity
         for i in range(num):
@@ -31,12 +34,20 @@ class CollisionSystem:
 
                 # if there is a collision   
                 if pygame.sprite.collide_mask(entity.collision_component, other_entity.collision_component):
-                    # handle the collision, add result to array
-                    to_remove.append(entity.collision_component.on_collide(other_entity))
+                    # handle the collision, getting the entity to be removed
+                    res = entity.collision_component.on_collide(other_entity)
+                    # removing entity, if not None
+                    if res is not None:
+                        res.remove = True
 
-        # for every entity marked to be removed
-        for entity in to_remove:
-            # if entity is not None
-            if entity is not None:
-                # remove the entity from the game.
-                EntityManager.remove_entity(entity)
+
+class Controller:
+    def __init__(self, player: Entity):
+        self.player = player
+
+    def update(self, actions: np.ndarray) -> None:
+        if actions[1]:
+            self.player.jump(entity=self.player)
+        
+    def reset(self, player: Entity) -> None:
+        self.player = player
