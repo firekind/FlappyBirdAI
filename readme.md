@@ -7,6 +7,8 @@ Implementing [DeepMind's Q-Learning algorithm](https://arxiv.org/pdf/1312.5602.p
 
 - [ ] Implementation of the network
 
+- [ ] Training
+
 ## Disclaimer
 This work is inspired and based on this [repo](https://github.com/yanpanlau/Keras-FlappyBird). 
 
