@@ -1,3 +1,4 @@
+import os
 import random
 
 import pygame
@@ -12,7 +13,7 @@ from game.constants import *
 from game import paths
 
 class GameState:
-    def __init__(self, attach_keyboard=False):
+    def __init__(self, attach_keyboard=False, res_folder="res/"):
         # initializing pygame
         pygame.init()
         # creating screen
@@ -38,7 +39,10 @@ class GameState:
         self.keyboard_attached = attach_keyboard
 
         # setting the score font
-        self.score_font = pygame.font.Font("res/fonts/Flappy-Bird.ttf", 100)
+        self.score_font = pygame.font.Font(
+            os.path.join(res_folder, "fonts", "Flappy-Bird.ttf"), 
+            100
+        )
 
         # creating GUI manager
         self.gui = GUIManager(self.screen, self.score_font)
