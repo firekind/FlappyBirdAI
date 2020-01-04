@@ -4,8 +4,6 @@ import random
 import pygame
 from pygame import Vector2
 
-import numpy as np
-
 import game.core as core
 from game.core.managers import EntityManager, KeyboardManager, GUIManager
 from game.core.systems import CollisionSystem, Controller
@@ -47,7 +45,7 @@ class GameState:
         # creating GUI manager
         self.gui = GUIManager(self.screen, self.score_font)
  
-    def step(self, actions: np.ndarray = None):
+    def step(self, actions: List[int] = None):
         """
         Starts the game.
         """
