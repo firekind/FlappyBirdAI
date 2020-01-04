@@ -1,5 +1,6 @@
 import random
 from collections import deque
+from typing import List, Tuple
 
 import torch
 import torch.nn as nn
@@ -59,34 +60,38 @@ class Solver:
         actions_t[0] = 1 # setting the action to "not flap"
         
         # stepping the emulator
+        frame: torch.Tensor
         frame, _, _ = self.emulator.step(actions_t.tolist())
 
         # preprocessing frame
-        frame_p = self.preprocess(frame)
+        frame_p: torch.Tensor = self.preprocess(frame)
 
         # creating state_t, which is the preprocessed frame stacked
         # 4 times. Done to infer information such as velocity, etc.
-        state_t = torch.stack([frame_p for _ in range(4)])
+        state_t: torch.Tensr = torch.stack([frame_p for _ in range(4)])
 
         # initializing epsilon, the probability of selecting a random 
         # action
-        epsilon = self.args.initial_epsilon
+        epsilon: float = self.args.initial_epsilon
 
         # initializing the count for frames
-        num_frames = 0
+        num_frames: int = 0
 
         # initializing action index
-        action_index = 0
+        action_index: int = 0
 
         # initializing previous action index
-        prev_action_index = 0
+        prev_action_index: int = 0
+
+        # the list to store the minibatch
+        minibatch: List[Tuple[torch.Tensor, torch.Tensor, float, torch.Tensor, bool]]
     
         while True:
             # Populating replay memory:
 
             # forward passing the network, getting rewards for
             # each action
-            output = self.model(state_t)
+            output: torch.Tensor = self.model(state_t)
 
             # initializing actions array
             actions_t = torch.zeros(Solver.NUM_ACTIONS)
@@ -107,14 +112,16 @@ class Solver:
                 actions_t[prev_action_index] = 1
 
             # running action in the emulator
+            reward_t: float
+            is_terminal: bool
             frame, reward_t, is_terminal = self.emulator.step(actions_t.tolist())
 
             # pre processing frame
-            frame_p = self.preprocess(frame)
+            frame_p: torch.Tensor = self.preprocess(frame)
 
             # constructing state_t1, by adding the new frame to the end
             # of the state_t and dropping the first frame in state_t
-            state_t1 = torch.cat((
+            state_t1: torch.Tensor = torch.cat((
                 state_t[1:, :, :, :],
                 frame_p.unsqueeze(0)  # adding new dimension at the beginning
             ), dim=0)
@@ -133,19 +140,26 @@ class Solver:
                     epsilon -= (self.args.initial_epsilon - self.args.final_epsilon) / self.args.explore
 
                 # sampling a minibatch from replay memory
-                batch = random.sample(self.D, self.args.batch_size)
+                minibatch = random.sample(self.D, self.args.batch_size)
 
                 # extracting the variables from batch
-                state_ts, actions_ts, reward_ts, state_t1s, is_terminals = zip(*batch)
+                state_ts: Tuple[torch.Tensor]
+                actions_ts: Tuple[torch.Tensor]
+                reward_ts: Tuple[float]
+                state_t1s: Tuple[torch.Tensor]
+                is_terminals: Tuple[bool]
+                state_ts, actions_ts, reward_ts, state_t1s, is_terminals = zip(*minibatch)
 
                 # initializing variable to store optimal values
-                y = torch.FloatTensor()
+                y: torch.Tensor = torch.FloatTensor()
 
                 # performing a forward pass on the state_ts, getting the rewards
-                out_state_ts = self.model(state_ts)
+                # for all actions
+                out_state_ts: torch.Tensor = self.model(state_ts)
 
                 # performing a forward pass on the state_t1s, getting the rewards
-                out_state_t1s = self.model(state_t1s)
+                # for all actions
+                out_state_t1s: torch.Tensor = self.model(state_t1s)
 
                 # calculating the optimal rewards
                 for i in self.args.batch_size:
@@ -175,7 +189,7 @@ class Solver:
                 # 1 when an action is performed and 0 when it is not, only the reward for the
                 # performed action will remain in the final product, the other element will 
                 # be 0.) and summed row wise, producing the required 1D array.
-                reduced_out_state_ts = torch.sum(out_state_ts * actions_ts, dim=1)
+                reduced_out_state_ts: torch.Tensor = torch.sum(out_state_ts * actions_ts, dim=1)
 
                 # calculating loss
                 loss = self.loss_func(reduced_out_state_ts, y)
