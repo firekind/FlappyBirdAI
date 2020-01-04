@@ -8,7 +8,7 @@ class Model(nn.Module):
     """
 
     def __init__(self):
-        super(nn.Module, self).__init__()
+        super(Model, self).__init__()
         self.convnet: nn.Sequential = nn.Sequential(
             nn.Conv2d(4, 16, (8, 8), stride=4),
             nn.ReLU(),
