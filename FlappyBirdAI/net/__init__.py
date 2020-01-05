@@ -126,7 +126,7 @@ class Solver:
 
                 else:
                     # choosing action with the highest reward
-                    action_index = torch.argmax(output)
+                    action_index = torch.argmax(output[-1])
 
                 actions_t[action_index] = 1
             else:
