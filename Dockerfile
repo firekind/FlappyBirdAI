@@ -2,6 +2,7 @@ FROM nvidia/cuda:10.1-cudnn7-devel-ubuntu18.04
 
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
+    sudo \
     python \
     python3.7 \
     python3-pip \
@@ -16,3 +17,7 @@ RUN apt-get update && \
     libportmidi-dev \
     && \
     pip3 install virtualenv
+
+RUN groupadd -g 998 wheel
+RUN useradd -u 1000 -mg users -G wheel dev -s /bin/bash
+RUN echo '%wheel ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
