@@ -1,16 +1,21 @@
 import os
+import sys
 import random
+from typing import List, Union
 
 import pygame
 from pygame import Vector2
 
-import game.core as core
-from game.core.managers import EntityManager, KeyboardManager, GUIManager
-from game.core.systems import CollisionSystem, Controller
-from game.constants import *
-from game import paths
+import numpy as np
 
-class GameState:
+from game import paths
+import game.core as core
+from game.constants import *
+from game.core.systems import CollisionSystem, Controller
+from game.core.managers import EntityManager, KeyboardManager, GUIManager
+
+
+class Emulator:
     def __init__(self, attach_keyboard=False, res_folder="res/"):
         # initializing pygame
         pygame.init()
@@ -45,23 +50,26 @@ class GameState:
         # creating GUI manager
         self.gui = GUIManager(self.screen, self.score_font)
  
-    def step(self, actions: List[int] = None):
+    def step(self, actions: List[int] = None) -> Union['GameState', bool]:
         """
         Starts the game.
         """
-        # intializing reward
+        # initializing reward
         reward = 0.1
-        # initialzing is_terminal
+        # initializing is_terminal
         is_terminal = False
+        # initializing flag that determines whether game should exit or not
+        should_exit = False
 
         # clearing events or processing them, if the keyboard is attached
         if self.keyboard_attached:
-            self.handle_keyboard()
+            should_exit = self.handle_events()
         else:
-            pygame.event.pump()
-        
-        # applying action
-        self.controller.update(actions)
+            # handling quit events
+            if (self.handle_events()):
+                sys.exit()
+            # applying action
+            self.controller.update(actions)
         # updating entities
         player_dead, delta_score = EntityManager.update_entities(delta=1)
         # updating collision system
@@ -89,16 +97,25 @@ class GameState:
         # previous call
         self.clock.tick(FPS)
 
-        return state, reward, is_terminal
+        if not should_exit:
+            return GameState(
+                frame=state,
+                reward=reward,
+                is_terminal=is_terminal,
+                score=self.score
+            )
+        return False
 
-    def handle_keyboard(self) -> None:
+    def handle_events(self) -> bool:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                return False
-            if event.type == pygame.KEYDOWN:
+                return True
+            if event.type == pygame.KEYDOWN and self.keyboard_attached:
                 self.keyboard_manager.down(event)
-            if event.type == pygame.KEYUP:
+            if event.type == pygame.KEYUP and self.keyboard_attached:
                 self.keyboard_manager.up(event)
+        
+        return False
                 
 
     def reset(self) -> None:
@@ -207,3 +224,23 @@ class EntityCreator:
 
 
         EntityManager.add_entity(pipe2)
+
+
+class GameState:
+    def __init__(self, frame: np.array, reward: float, is_terminal: bool, score: int):
+        self.frame = frame
+        self.reward = reward
+        self.is_terminal = is_terminal
+        self.score = score
+
+    def __getitem__(self, key) -> Union[np.array, float, bool, int]:
+        if key == 0:
+            return self.frame
+        elif key == 1:
+            return self.reward
+        elif key == 2:
+            return self.is_terminal
+        elif key == 3:
+            return self.score
+        else:
+            raise IndexError

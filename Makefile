@@ -12,4 +12,6 @@ venv:
 	$(PYTHON_HOME)/python -m ipykernel install --user --name flappybirdai --display-name "Python (flappybirdai)"
 
 run:
-	@$(PYTHON_HOME)/python FlappyBirdAI/main.py
+	@$(PYTHON_HOME)/python FlappyBirdAI/main.py train \
+		--cuda \
+		--verbose \

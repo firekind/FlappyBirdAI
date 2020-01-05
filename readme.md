@@ -5,7 +5,7 @@ Implementing [DeepMind's Q-Learning algorithm](https://arxiv.org/pdf/1312.5602.p
 
 - [x] Implementation of the emulator
 
-- [ ] Implementation of the network
+- [x] Implementation of the network
 
 - [ ] Training
 

@@ -1,9 +1,11 @@
+from typing import Optional
+
 import pygame
 
 import numpy as np
 
-from game.core.managers import EntityManager
 from game.core import Entity
+from game.core.managers import EntityManager
 
 
 class CollisionSystem:
@@ -45,7 +47,10 @@ class Controller:
     def __init__(self, player: Entity):
         self.player = player
 
-    def update(self, actions: np.ndarray) -> None:
+    def update(self, actions: Optional[np.ndarray]) -> None:
+        if actions is None:
+            return
+
         if actions[1]:
             self.player.jump(entity=self.player)
         
