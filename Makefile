@@ -9,7 +9,6 @@ endif
 venv:
 	@virtualenv --python=python3 venv
 	@$(PYTHON_HOME)/python -m pip install -r requirements.txt $(PYTORCH_FIND_LINKS_FLAG)
-	$(PYTHON_HOME)/python -m ipykernel install --user --name flappybirdai --display-name "Python (flappybirdai)"
 
 run:
 	@$(PYTHON_HOME)/python FlappyBirdAI/main.py train \
