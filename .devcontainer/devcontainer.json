@@ -1,0 +1,21 @@
+{
+    "name": "FlappyBirdAI",
+    "dockerFile": "../Dockerfile",
+    "remoteUser": "dev",
+    "extensions": [
+        "ms-python.python",
+        "njpwerner.autodocstring",
+        "visualstudioexptteam.vscodeintellicode",
+        "christian-kohler.path-intellisense"
+    ],
+    "settings": { 
+        "terminal.integrated.shell.linux": "/bin/bash"
+    },
+    "runArgs": [
+        "--gpus=0",
+	    "--net=host",
+        "--env=DISPLAY",
+        "--volume=${localEnv:HOME}/.Xauthority:/home/dev/.Xauthority:ro",
+        "--device=/dev/snd"
+    ]
+}

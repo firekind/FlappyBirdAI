@@ -1,5 +1,4 @@
 .vscode/
-.devcontainer/
 __pycache__/
 venv/
 *.pyc
